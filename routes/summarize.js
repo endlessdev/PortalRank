@@ -1,9 +1,12 @@
 const read = require('node-readability');
 const cheerio = require('cheerio');
-const exec = require('child_process').exec;
+const exec = require('child-process-promise').exec;
 
-read('https://ko.wikipedia.org/wiki/%EB%8C%80%ED%95%9C%EB%AF%BC%EA%B5%AD', function(err, article, meta) {
-    if(!err){
+(async function readWiki() {
+    let wikiURL = 'https://ko.wikipedia.org/wiki/%EB%8C%80%ED%95%9C%EB%AF%BC%EA%B5%AD'
+
+    try {
+        let data = await read(wikiURL)
         const content = article.content
             .replace(/<script[^>]*>[\s\S]*?<\/script>/igm, '')
             .replace(/<style[^>]*>[\s\S]*?<\/style>/igm, '');
@@ -15,17 +18,14 @@ read('https://ko.wikipedia.org/wiki/%EB%8C%80%ED%95%9C%EB%AF%BC%EA%B5%AD', funct
             .replace( /\s\s+/g, ' ')
             .trim();
 
-            console.log(parsedContent);
-
-        exec("python3 ./textrank.py '"+parsedContent+"'", function (error, stdout, stderr) {
-            console.log(JSON.parse(stdout));
-            if (error !== null) {
-                console.log('exec error: ' + error);
-            }
-        });
-
-    } else {
-        console.log(err);
+        console.log("parsed content: ", parsedContent);
+        let execParam = `python3 ./textrank.py '${parsedContent}'`
+        
+        let result = await exec(execParam)
+        console.log(JSON.parse(resultstdout))
+        
+        article.close()
+    } catch (e) {
+        console.error('failed to read wiki', e)
     }
-    article.close();
-});
+}())
